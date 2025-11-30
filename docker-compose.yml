@@ -10,6 +10,13 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
+      # MongoDB connection string (required)
+      # Example: mongodb://localhost:27017/yt-cutter or mongodb+srv://user:pass@cluster.mongodb.net/yt-cutter
+      - MONGO_DB_URI=${MONGO_DB_URI}
+      # Admin key for accessing the admin panel (required)
+      - ADMIN_KEY=${ADMIN_KEY}
+    env_file:
+      - .env
     volumes:
       # Mount out_dir for persistent storage (optional)
       - ./out_dir:/app/out_dir
