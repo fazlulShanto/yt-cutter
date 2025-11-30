@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "tsx test/test-api.ts",
-    "dev": "tsx src/index.ts",
+    "dev": "tsx src/index.tsx",
     "type-check": "tsc --noEmit"
   },
   "keywords": [],
