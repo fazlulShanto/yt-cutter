@@ -31,6 +31,10 @@ async function uploadToTmpFiles(filePath) {
         throw new Error('Invalid response from tmpfiles.org');
     } catch (error) {
         console.error('Upload error:', error.message);
+        if (error.response) {
+            console.error('Response status:', error.response.status);
+            console.error('Response data:', JSON.stringify(error.response.data));
+        }
         throw new Error(`Failed to upload file: ${error.message}`);
     }
 }

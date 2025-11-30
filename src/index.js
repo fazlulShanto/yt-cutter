@@ -6,6 +6,7 @@ const path = require('path');
 const { getBinaryPaths, verifyBinaries } = require('./utils/platform');
 const { validateConfig } = require('./utils/config');
 const { buildYtDlpArgs } = require('./utils/ytdlp-builder');
+const { uploadToTmpFiles } = require('./services/uploader');
 
 const app = express();
 const port = 3000;
@@ -24,6 +25,8 @@ if (!fs.existsSync(outDir)) {
 }
 
 app.get('/download', async (req, res) => {
+    let outputPath = null;
+
     try {
         // Validate configuration
         const config = validateConfig(req.query);
@@ -34,7 +37,7 @@ app.get('/download', async (req, res) => {
         // Generate unique filename
         const timestamp = Date.now();
         const filename = `video_${timestamp}.mp4`;
-        const outputPath = path.join(outDir, filename);
+        outputPath = path.join(outDir, filename);
 
         // Build yt-dlp arguments
         const args = buildYtDlpArgs(config, outputPath);
@@ -73,17 +76,35 @@ app.get('/download', async (req, res) => {
         const fileStats = fs.statSync(outputPath);
         console.log(`File saved: ${outputPath} (${fileStats.size} bytes)`);
 
-        // Return JSON response with file path
+        // Upload to tmpfiles.org
+        console.log('Uploading to tmpfiles.org...');
+        const downloadUrl = await uploadToTmpFiles(outputPath);
+        console.log(`Upload successful: ${downloadUrl}`);
+
+        // Clean up local file after upload
+        fs.unlinkSync(outputPath);
+        console.log(`Cleaned up local file: ${outputPath}`);
+
+        // Return JSON response with download URL
         res.json({
             success: true,
-            filePath: outputPath,
-            fileName: filename,
+            downloadUrl: downloadUrl,
             fileSize: fileStats.size,
             format: config.format
         });
 
     } catch (error) {
         console.error('Server error:', error);
+
+        // Clean up file on error
+        if (outputPath && fs.existsSync(outputPath)) {
+            try {
+                fs.unlinkSync(outputPath);
+                console.log(`Cleaned up file after error: ${outputPath}`);
+            } catch (cleanupError) {
+                console.error('Error cleaning up file:', cleanupError);
+            }
+        }
 
         if (!res.headersSent) {
             res.status(500).json({

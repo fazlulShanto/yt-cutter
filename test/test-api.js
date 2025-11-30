@@ -59,9 +59,13 @@ const request = http.get(selectedTest.url, function (response) {
             console.log('✓ Download completed successfully!\n');
             console.log('Response:');
             console.log(JSON.stringify(result, null, 2));
-            console.log(`\nDownload URL: ${result.downloadUrl}`);
-            console.log(`File Size: ${(result.fileSize / 1024 / 1024).toFixed(2)} MB`);
-            console.log(`Format: ${result.format}`);
+
+            if (result.downloadUrl) {
+                console.log(`\n📥 Download URL: ${result.downloadUrl}`);
+                console.log(`📦 File Size: ${(result.fileSize / 1024 / 1024).toFixed(2)} MB`);
+                console.log(`🎬 Format: ${result.format}`);
+                console.log('\n⏰ File will be automatically deleted after 60 minutes');
+            }
         } catch (error) {
             console.error('Error parsing response:', error.message);
             console.error('Raw response:', data);
