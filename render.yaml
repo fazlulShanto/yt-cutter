@@ -1,0 +1,26 @@
+services:
+  # YT-Cutter API Service
+  - type: web
+    name: yt-cutter-api
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_DB_URI
+        sync: false  # Set this in Render dashboard as a secret
+      - key: ADMIN_KEY
+        sync: false  # Set this in Render dashboard as a secret
+    healthCheckPath: /health
+    autoDeploy: true
+    
+# Note: You need to manually set the following environment variables in the Render dashboard:
+# 1. MONGO_DB_URI - Your MongoDB connection string (e.g., from MongoDB Atlas)
+# 2. ADMIN_KEY - Your admin panel authentication key
+#
+# To set these:
+# 1. Go to your service in the Render dashboard
+# 2. Navigate to "Environment" tab
+# 3. Add the environment variables there

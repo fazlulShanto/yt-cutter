@@ -6,6 +6,7 @@
   "scripts": {
     "test": "tsx test/test-api.ts",
     "dev": "tsx src/index.tsx",
+    "start": "tsx src/index.tsx",
     "type-check": "tsc --noEmit"
   },
   "keywords": [],
