@@ -8,6 +8,7 @@ A modular Express API built with TypeScript for downloading and cutting YouTube 
 - **deno** (required)
 - **ffmpeg** (required)
 - **pnpm** (package manager)
+- **MongoDB** (for API key management)
 
 ### Installing ffmpeg
 
@@ -27,6 +28,26 @@ sudo apt-get install ffmpeg
 sudo yum install ffmpeg
 ```
 
+### MongoDB Setup
+
+**Local MongoDB:**
+```bash
+# macOS
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb-community
+
+# Linux
+sudo apt-get install mongodb
+sudo systemctl start mongodb
+```
+
+**Or use MongoDB Atlas** (cloud):
+1. Create account at https://www.mongodb.com/cloud/atlas
+2. Create a free cluster
+3. Get connection string
+4. Add to `.env` file
+
 ## Installation
 
 1. Clone the repository
@@ -42,6 +63,23 @@ sudo yum install ffmpeg
    
    This will automatically detect your platform and download the latest yt-dlp binary.
 
+4. Create `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and set:
+   ```env
+   MONGO_DB_URI=mongodb://localhost:27017/yt-cut
+   ADMIN_KEY=your-secure-admin-key-here
+   ```
+   
+   **For MongoDB Atlas:**
+   ```env
+   MONGO_DB_URI=mongodb+srv://username:password@cluster.mongodb.net/yt-cut
+   ADMIN_KEY=your-secure-admin-key-here
+   ```
+
 > [!NOTE]
 > For Docker deployment, yt-dlp is automatically downloaded during the image build process.
 
@@ -54,6 +92,64 @@ pnpm dev
 ```
 
 Server will start on `http://localhost:3000`
+
+## Authentication
+
+The API uses API key authentication with quota management.
+
+### Admin Endpoints
+
+All admin endpoints require `x-admin-key` header with the value from your `.env` file.
+
+#### Create API Key
+```bash
+curl -X POST http://localhost:3000/admin/api-keys \
+  -H "Content-Type: application/json" \
+  -H "x-admin-key: YOUR_ADMIN_KEY" \
+  -d '{"name":"My App","maxConcurrent":2}'
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "id": "...",
+    "key": "yt_...",
+    "name": "My App",
+    "maxConcurrent": 2,
+    "currentUsage": 0,
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+#### List API Keys
+```bash
+curl http://localhost:3000/admin/api-keys \
+  -H "x-admin-key: YOUR_ADMIN_KEY"
+```
+
+#### Update API Key
+```bash
+curl -X PATCH http://localhost:3000/admin/api-keys/KEY_ID \
+  -H "Content-Type: application/json" \
+  -H "x-admin-key: YOUR_ADMIN_KEY" \
+  -d '{"maxConcurrent":5}'
+```
+
+#### Delete API Key
+```bash
+curl -X DELETE http://localhost:3000/admin/api-keys/KEY_ID \
+  -H "x-admin-key: YOUR_ADMIN_KEY"
+```
+
+### Quick Test
+
+Run the authentication test script:
+```bash
+./scripts/test-auth.sh
+```
 
 ### Docker
 
@@ -75,9 +171,18 @@ docker-compose down
 
 ## API Usage
 
+> [!IMPORTANT]
+> All download requests require a valid API key in the `x-api-key` header.
+
 ### Endpoint
 
 `GET /download`
+
+### Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `x-api-key` | Yes | Your API key from admin panel |
 
 ### Query Parameters
 

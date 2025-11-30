@@ -30,3 +30,23 @@ export interface QueryParams {
     audioRes?: string;
     format?: string;
 }
+
+export interface CreateApiKeyRequest {
+    name: string;
+    maxConcurrent?: number;
+}
+
+export interface ApiKeyResponse {
+    id: string;
+    key: string;
+    name: string;
+    maxConcurrent: number;
+    currentUsage: number;
+    createdAt: string;
+    lastUsedAt?: string;
+}
+
+export interface UpdateApiKeyRequest {
+    maxConcurrent?: number;
+    name?: string;
+}

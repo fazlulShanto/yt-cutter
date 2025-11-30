@@ -1,19 +1,24 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
+import 'dotenv/config';
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { cors } from 'hono/cors';
 import YtDlpWrap from 'yt-dlp-wrap';
 import fs from 'fs';
 import path from 'path';
+import { connectDB } from './db/connection';
 import { getBinaryPaths, verifyBinaries } from './utils/platform';
 import { validateConfig } from './utils/config';
 import { buildYtDlpArgs } from './utils/ytdlp-builder';
 import { uploadToTmpFiles } from './services/uploader';
+import { validateApiKey, checkQuota, incrementUsage, decrementUsage } from './middleware/auth';
+import adminRoutes from './routes/admin';
 import { ApiResponse, QueryParams } from './types';
 
-const app = express();
+const app = new Hono();
 const port = 3000;
 
-app.use(cors());
-app.use(express.json());
+// Enable CORS
+app.use('/*', cors());
 
 // Get binary paths
 const { ytDlpPath } = getBinaryPaths();
@@ -25,20 +30,35 @@ if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
 }
 
+// Mount admin routes
+app.route('/admin', adminRoutes);
+
 // Health check endpoint for Docker
-app.get('/health', (_req: Request, res: Response) => {
-    res.status(200).json({ status: 'ok' });
+app.get('/health', (c) => {
+    return c.json({ status: 'ok' });
 });
 
-app.get('/download', async (req: Request<{}, {}, {}, QueryParams>, res: Response<ApiResponse>) => {
+// Download endpoint - requires API key and quota check
+app.get('/download', validateApiKey, checkQuota, async (c) => {
     let outputPath: string | null = null;
+    const apiKeyDoc = c.get('apiKeyDoc');
+    const apiKey = apiKeyDoc?.key;
 
     try {
+        // Increment usage counter
+        if (apiKey) {
+            await incrementUsage(apiKey);
+        }
+
+        // Get query parameters
+        const query = c.req.query() as QueryParams;
+        
         // Validate configuration
-        const config = validateConfig(req.query);
+        const config = validateConfig(query);
         
         console.log(`Request to download ${config.url} from ${config.start} to ${config.end}`);
         console.log(`Config: type=${config.type}, videoRes=${config.videoRes}, audioRes=${config.audioRes}, format=${config.format}`);
+        console.log(`API Key: ${apiKeyDoc?.name} (${apiKeyDoc?.currentUsage + 1}/${apiKeyDoc?.maxConcurrent})`);
 
         // Generate unique filename
         const timestamp = Date.now();
@@ -91,16 +111,28 @@ app.get('/download', async (req: Request<{}, {}, {}, QueryParams>, res: Response
         fs.unlinkSync(outputPath);
         console.log(`Cleaned up local file: ${outputPath}`);
 
+        // Decrement usage counter
+        if (apiKey) {
+            await decrementUsage(apiKey);
+        }
+
         // Return JSON response with download URL
-        res.json({
+        const response: ApiResponse = {
             success: true,
             downloadUrl: downloadUrl,
             fileSize: fileStats.size,
             format: config.format
-        });
+        };
+
+        return c.json(response);
 
     } catch (error) {
         console.error('Server error:', error);
+        
+        // Decrement usage counter on error
+        if (apiKey) {
+            await decrementUsage(apiKey);
+        }
         
         // Clean up file on error
         if (outputPath && fs.existsSync(outputPath)) {
@@ -112,17 +144,32 @@ app.get('/download', async (req: Request<{}, {}, {}, QueryParams>, res: Response
             }
         }
         
-        if (!res.headersSent) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            res.status(500).json({
-                success: false,
-                error: errorMessage
-            });
-        }
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorResponse: ApiResponse = {
+            success: false,
+            error: errorMessage
+        };
+
+        return c.json(errorResponse, 500);
     }
 });
 
-app.listen(port, () => {
-    verifyBinaries();
-    console.log(`Server running at http://localhost:${port}`);
-});
+// Verify binaries, connect to MongoDB, and start server
+async function startServer() {
+    try {
+        verifyBinaries();
+        await connectDB();
+
+        serve({
+            fetch: app.fetch,
+            port
+        }, (info) => {
+            console.log(`Server running at http://localhost:${info.port}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
+
+startServer();
