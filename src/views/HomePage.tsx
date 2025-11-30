@@ -6,27 +6,28 @@ export const HomePage: FC = () => {
         <Layout title="YouTube Video Cutter">
             <h1>🎬 YouTube Video Cutter</h1>
             <p class="subtitle">Download and cut YouTube videos with custom time ranges</p>
-            
+
             <form id="downloadForm">
                 <div class="form-group">
                     <label for="apiKey">API Key *</label>
-                    <input 
-                        type="text" 
-                        id="apiKey" 
-                        name="apiKey" 
-                        required 
+                    <input
+                        type="text"
+                        id="apiKey"
+                        name="apiKey"
+                        required
                         placeholder="Enter your API key"
+                        autocomplete="off"
                     />
                     <div class="helper-text">Your API key is required to authenticate requests</div>
                 </div>
 
                 <div class="form-group">
                     <label for="url">YouTube URL *</label>
-                    <input 
-                        type="url" 
-                        id="url" 
-                        name="url" 
-                        required 
+                    <input
+                        type="url"
+                        id="url"
+                        name="url"
+                        required
                         placeholder="https://www.youtube.com/watch?v=..."
                     />
                 </div>
@@ -35,20 +36,20 @@ export const HomePage: FC = () => {
                     <label>Time Range</label>
                     <div class="time-inputs">
                         <div>
-                            <input 
-                                type="text" 
-                                id="start" 
-                                name="start" 
+                            <input
+                                type="text"
+                                id="start"
+                                name="start"
                                 placeholder="Start (e.g., 00:00:10)"
                                 required
                             />
                             <div class="helper-text">Format: HH:MM:SS or MM:SS</div>
                         </div>
                         <div>
-                            <input 
-                                type="text" 
-                                id="end" 
-                                name="end" 
+                            <input
+                                type="text"
+                                id="end"
+                                name="end"
                                 placeholder="End (e.g., 00:01:30)"
                                 required
                             />
@@ -83,20 +84,25 @@ export const HomePage: FC = () => {
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label for="audioRes">Audio Quality</label>
-                    <select id="audioRes" name="audioRes">
-                        <option value="128">128 kbps (High)</option>
-                        <option value="96" selected>96 kbps (Standard)</option>
-                    </select>
-                </div>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                }}>
+                    <div class="form-group">
+                        <label for="audioRes">Audio Quality</label>
+                        <select id="audioRes" name="audioRes">
+                            <option value="128">128 kbps (High)</option>
+                            <option value="96" selected>96 kbps (Standard)</option>
+                        </select>
+                    </div>
 
-                <div class="form-group">
-                    <label for="format">Output Format</label>
-                    <select id="format" name="format">
-                        <option value="mp4" selected>MP4</option>
-                        <option value="wav">WAV (Audio only)</option>
-                    </select>
+                    <div class="form-group">
+                        <label for="format">Output Format</label>
+                        <select id="format" name="format">
+                            <option value="mp4" selected>MP4</option>
+                            <option value="wav">WAV (Audio only)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <button type="submit">Download & Cut Video</button>

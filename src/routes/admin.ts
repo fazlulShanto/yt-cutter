@@ -151,6 +151,41 @@ admin.patch('/api-keys/:id', async (c) => {
 });
 
 /**
+ * POST /admin/api-keys/:id/reset-quota - Reset current usage quota
+ */
+admin.post('/api-keys/:id/reset-quota', async (c) => {
+    try {
+        const id = c.req.param('id');
+        
+        const apiKey = await ApiKey.findByIdAndUpdate(
+            id,
+            { $set: { currentUsage: 0 } },
+            { new: true }
+        );
+
+        if (!apiKey) {
+            return c.json({ success: false, error: 'API key not found' }, 404);
+        }
+
+        const response: ApiKeyResponse = {
+            id: apiKey._id.toString(),
+            key: apiKey.key,
+            name: apiKey.name,
+            maxConcurrent: apiKey.maxConcurrent,
+            currentUsage: apiKey.currentUsage,
+            createdAt: apiKey.createdAt.toISOString(),
+            lastUsedAt: apiKey.lastUsedAt?.toISOString()
+        };
+
+        return c.json({ success: true, data: response, message: 'Quota reset successfully' });
+    } catch (error) {
+        console.error('Error resetting quota:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return c.json({ success: false, error: errorMessage }, 500);
+    }
+});
+
+/**
  * DELETE /admin/api-keys/:id - Delete API key
  */
 admin.delete('/api-keys/:id', async (c) => {

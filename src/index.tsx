@@ -21,6 +21,7 @@ import adminRoutes from "./routes/admin";
 import { ApiResponse, QueryParams } from "./types";
 import { HomePage } from "./views/HomePage";
 import { SuccessPage } from "./views/SuccessPage";
+import { AdminPage } from "./views/AdminPage";
 
 const app = new Hono();
 const port = 3000;
@@ -38,7 +39,12 @@ if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
 }
 
-// Mount admin routes
+// Admin UI - accessible at /admin/ui
+app.get("/admin/ui", (c) => {
+    return c.html(<AdminPage />);
+});
+
+// Mount admin API routes at /admin/*
 app.route("/admin", adminRoutes);
 
 // Home page UI
@@ -51,11 +57,11 @@ app.get("/success", (c) => {
     const downloadUrl = c.req.query('downloadUrl') || '';
     const fileSize = c.req.query('fileSize') || '0';
     const format = c.req.query('format') || 'mp4';
-    
+
     if (!downloadUrl) {
         return c.redirect('/');
     }
-    
+
     return c.html(<SuccessPage downloadUrl={downloadUrl} fileSize={fileSize} format={format} />);
 });
 
@@ -89,8 +95,7 @@ app.get("/download", validateApiKey, checkQuota, async (c) => {
             `Config: type=${config.type}, videoRes=${config.videoRes}, audioRes=${config.audioRes}, format=${config.format}`
         );
         console.log(
-            `API Key: ${apiKeyDoc?.name} (${apiKeyDoc?.currentUsage + 1}/${
-                apiKeyDoc?.maxConcurrent
+            `API Key: ${apiKeyDoc?.name} (${apiKeyDoc?.currentUsage + 1}/${apiKeyDoc?.maxConcurrent
             })`
         );
 
