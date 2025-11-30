@@ -1,0 +1,79 @@
+import http from 'http';
+import { ApiResponse } from '../src/types';
+
+const rootVideoUrl = 'https://www.youtube.com/watch?v=EKvvptbTx6k';
+
+interface TestCase {
+    name: string;
+    url: string;
+}
+
+// Test configuration
+const testCases: TestCase[] = [
+    // {
+    //     name: 'Video+Audio 720p/128k (default)',
+    //     url: `http://localhost:3000/download?url=${rootVideoUrl}&start=00:00:00&end=00:00:05`
+    // },
+    {
+        name: 'Video+Audio 480p/96k',
+        url: `http://localhost:3000/download?url=${rootVideoUrl}&start=00:00:00&end=00:00:05&videoRes=480&audioRes=96`
+    },
+    // {
+    //     name: 'Video-only 720p',
+    //     url: `http://localhost:3000/download?url=${rootVideoUrl}&start=00:00:00&end=00:00:05&type=video`
+    // },
+    // {
+    //     name: 'Audio-only 128k WAV',
+    //     url: `http://localhost:3000/download?url=${rootVideoUrl}&start=00:00:00&end=00:00:05&type=audio&format=wav`
+    // },
+];
+
+// Select which test to run (change index to test different cases)
+const selectedTest = testCases[0];
+
+console.log(`\n=== Testing: ${selectedTest.name} ===`);
+console.log(`URL: ${selectedTest.url}\n`);
+
+const request = http.get(selectedTest.url, function (response) {
+    if (response.statusCode !== 200) {
+        console.error(`Request failed with status code: ${response.statusCode}`);
+        response.setEncoding('utf8');
+        let data = '';
+        response.on('data', (chunk: string) => {
+            data += chunk;
+        });
+        response.on('end', () => {
+            console.error('Response:', data);
+        });
+        return;
+    }
+
+    let data = '';
+    response.setEncoding('utf8');
+    
+    response.on('data', (chunk: string) => {
+        data += chunk;
+    });
+
+    response.on('end', () => {
+        try {
+            const result: ApiResponse = JSON.parse(data);
+            console.log('✓ Download completed successfully!\n');
+            console.log('Response:');
+            console.log(JSON.stringify(result, null, 2));
+            
+            if (result.downloadUrl) {
+                console.log(`\n📥 Download URL: ${result.downloadUrl}`);
+                console.log(`📦 File Size: ${((result.fileSize || 0) / 1024 / 1024).toFixed(2)} MB`);
+                console.log(`🎬 Format: ${result.format}`);
+                console.log('\n⏰ File will be automatically deleted after 60 minutes');
+            }
+        } catch (error) {
+            const err = error as Error;
+            console.error('Error parsing response:', err.message);
+            console.error('Raw response:', data);
+        }
+    });
+}).on('error', function (err: Error) {
+    console.error('Error making request:', err.message);
+});

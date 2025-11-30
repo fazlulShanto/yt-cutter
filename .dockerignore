@@ -1,0 +1,41 @@
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+.git
+.gitignore
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# TypeScript
+dist
+*.tsbuildinfo
+
+# Output directories
+out_dir
+temp
+
+# Development
+.env
+.env.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+*.md
+
+# Tests
+test

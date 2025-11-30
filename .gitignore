@@ -142,3 +142,4 @@ vite.config.ts.timestamp-*
 
 /out_dir
 /temp
+/bin

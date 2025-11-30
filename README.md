@@ -1,6 +1,6 @@
 # YT-Cutter API
 
-A modular Express API for downloading and cutting YouTube videos with configurable quality settings.
+A modular Express API built with TypeScript for downloading and cutting YouTube videos with configurable quality settings.
 
 ## System Requirements
 
@@ -35,17 +35,43 @@ sudo yum install ffmpeg
    pnpm install
    ```
 
-3. Add yt-dlp binary to the appropriate platform folder:
-   - macOS ARM: `bin/mac_arm/yt-dlp`
-   - Linux: `bin/linux/yt-dlp`
+3. Download yt-dlp binary for your platform:
+   ```bash
+   ./scripts/download-yt-dlp.sh
+   ```
+   
+   This will automatically detect your platform and download the latest yt-dlp binary.
+
+> [!NOTE]
+> For Docker deployment, yt-dlp is automatically downloaded during the image build process.
 
 ## Running the Server
+
+### Local Development
 
 ```bash
 pnpm dev
 ```
 
 Server will start on `http://localhost:3000`
+
+### Docker
+
+**Build and run with Docker Compose:**
+```bash
+docker-compose up -d
+```
+
+**Build manually:**
+```bash
+docker build -t yt-cutter .
+docker run -p 3000:3000 yt-cutter
+```
+
+**Stop the container:**
+```bash
+docker-compose down
+```
 
 ## API Usage
 
