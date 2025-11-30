@@ -177,6 +177,34 @@ export const AdminPage: FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Reset Quota Confirmation Modal */}
+                    <div id="resetModal" class="hidden fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+                            <h3 class="text-2xl font-bold text-slate-900 mb-2">Reset Quota</h3>
+                            <p class="text-slate-600 mb-6">Reset current usage to zero</p>
+
+                            <p class="text-slate-700 mb-6">
+                                Are you sure you want to reset the quota for "<strong id="resetKeyName" class="text-slate-900"></strong>"?
+                                This will set the current usage to 0.
+                            </p>
+
+                            <div class="flex gap-3">
+                                <button
+                                    id="cancelResetBtn"
+                                    class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 px-4 rounded-lg transition duration-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    id="confirmResetBtn"
+                                    class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-4 rounded-lg transition duration-200"
+                                >
+                                    Reset Quota
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <script dangerouslySetInnerHTML={{
@@ -184,6 +212,7 @@ export const AdminPage: FC = () => {
                     let adminKey = '';
                     let editingKeyId = null;
                     let deletingKeyId = null;
+                    let resettingKeyId = null;
 
                     // DOM Elements
                     const authSection = document.getElementById('authSection');
@@ -195,6 +224,7 @@ export const AdminPage: FC = () => {
                     const createKeyBtn = document.getElementById('createKeyBtn');
                     const keyModal = document.getElementById('keyModal');
                     const deleteModal = document.getElementById('deleteModal');
+                    const resetModal = document.getElementById('resetModal');
                     const errorAlert = document.getElementById('errorAlert');
                     const successAlert = document.getElementById('successAlert');
 
@@ -366,28 +396,10 @@ export const AdminPage: FC = () => {
                     };
 
                     // Reset quota
-                    window.resetQuota = async (id, name) => {
-                        if (!confirm(\`Reset quota for "\${name}"? This will set current usage to 0.\`)) {
-                            return;
-                        }
-
-                        try {
-                            const response = await fetch(\`/admin/api-keys/\${id}/reset-quota\`, {
-                                method: 'POST',
-                                headers: { 'X-Admin-Key': adminKey }
-                            });
-
-                            const data = await response.json();
-
-                            if (data.success) {
-                                showSuccess(data.message || 'Quota reset successfully');
-                                loadApiKeys();
-                            } else {
-                                showError(data.error || 'Failed to reset quota');
-                            }
-                        } catch (error) {
-                            showError('Failed to reset quota');
-                        }
+                    window.resetQuota = (id, name) => {
+                        resettingKeyId = id;
+                        document.getElementById('resetKeyName').textContent = name;
+                        resetModal.classList.remove('hidden');
                     };
 
                     // Save key (create or update)
@@ -474,6 +486,33 @@ export const AdminPage: FC = () => {
                         deleteModal.classList.add('hidden');
                     });
 
+                    // Confirm reset
+                    document.getElementById('confirmResetBtn').addEventListener('click', async () => {
+                        try {
+                            const response = await fetch(\`/admin/api-keys/\${resettingKeyId}/reset-quota\`, {
+                                method: 'POST',
+                                headers: { 'X-Admin-Key': adminKey }
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                resetModal.classList.add('hidden');
+                                showSuccess('Quota reset successfully');
+                                loadApiKeys();
+                            } else {
+                                showError(data.error || 'Failed to reset quota');
+                            }
+                        } catch (error) {
+                            showError('Failed to reset quota');
+                        }
+                    });
+
+                    // Cancel reset
+                    document.getElementById('cancelResetBtn').addEventListener('click', () => {
+                        resetModal.classList.add('hidden');
+                    });
+
                     // Close modals on outside click
                     keyModal.addEventListener('click', (e) => {
                         if (e.target === keyModal) {
@@ -484,6 +523,12 @@ export const AdminPage: FC = () => {
                     deleteModal.addEventListener('click', (e) => {
                         if (e.target === deleteModal) {
                             deleteModal.classList.add('hidden');
+                        }
+                    });
+
+                    resetModal.addEventListener('click', (e) => {
+                        if (e.target === resetModal) {
+                            resetModal.classList.add('hidden');
                         }
                     });
 
