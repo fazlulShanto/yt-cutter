@@ -24,7 +24,7 @@ import { SuccessPage } from "./views/SuccessPage";
 import { AdminPage } from "./views/AdminPage";
 
 const app = new Hono();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Enable CORS
 app.use("/*", cors());
